@@ -14,11 +14,11 @@ matplotlib = "*"
 scipy = "*"
 imageio = "*"
 autopep8 = "*"
-torch = "*"
 setuptools = "*"
 cython = "*"
 future = "*"
-torchvision = "*"
+torch = "==1.2.0"
+torchvision = "==0.4.0"
 
 [requires]
 python_version = "3.6"

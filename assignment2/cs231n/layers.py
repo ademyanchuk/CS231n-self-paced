@@ -203,7 +203,20 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        mu = np.mean(x, axis=0)   # mean [D,]
+        xmu = x - mu   # x - mean [N, D]
+        xmsq = np.square(xmu)   # [N, D]
+        var = np.mean(xmsq, axis=0)   # variance [D,]
+        std = np.sqrt(var + eps)   # std [D,]
+        inv_std = 1 / std   # [D,]
+        x_norm = xmu * inv_std   # normalized x [N, D]
+        gamma_x_norm = gamma * x_norm   # [N, D]
+        out = gamma_x_norm + beta   # layer output [N, D]
+
+        running_mean = momentum * running_mean + (1 - momentum) * mu
+        running_var = momentum * running_var + (1 - momentum) * var
+
+        cache = x_norm, gamma, xmu, inv_std, std, var, eps
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -218,7 +231,8 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        x_norm = (x - running_mean) / np.sqrt(running_var + eps)
+        out = gamma * x_norm + beta
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -260,7 +274,25 @@ def batchnorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x_norm, gamma, xmu, inv_std, std, var, eps = cache
+    N, D = dout.shape
+
+    dbeta = np.sum(dout, axis=0)   # [D,]
+    # d_gamma_x_norm = dout [N, D]
+    dgamma = np.sum(dout * x_norm, axis=0)   # [D,]
+    dx_norm = dout * gamma   # [N, D]
+    dinv_std = np.sum(dx_norm * xmu, axis=0)   # [D,]
+    dxmu1 = dx_norm * inv_std   # [N, D]
+    dstd = dinv_std * (-1 / np.square(std))   # [D,]
+    dvar = dstd * (1 / (2 * np.sqrt(var + eps)))   # [D,]
+    dxmsq = dvar * (np.ones((N, D))/N )   # [N, D]
+    dxmu2 = dxmsq * (2 * xmu)   # [N, D]
+    dxmu = dxmu1 + dxmu2   # [N, D]
+    dmu = np.sum(-1 * dxmu, axis=0)   # [D,]
+    # dx1 = dxmu * 1 [N, D]
+    dx2 = dmu * (np.ones((N,D)) / N)   # [N, D]
+    dx = dxmu + dx2   # [N, D]
+
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
